@@ -16,14 +16,14 @@ A user can verify success by running class_snu_uptodate with the same SINu param
 
 ## Progress
 
-- [ ] Milestone 1: Bootstrap, test harness, and vanilla baseline
-  - [ ] Record versions of class_public and class-interacting-neutrinos-PT in REFERENCE file
-  - [ ] Copy class_public into class_snu_uptodate
-  - [ ] Build class_snu_uptodate as vanilla CLASS
-  - [ ] Create comparison test framework (compare_outputs.py)
-  - [ ] Create vanilla .ini file (synchronous gauge)
-  - [ ] Run vanilla cases in class_snu_uptodate and verify output is produced
-  - [ ] Run compare_outputs.py to confirm class_snu_uptodate matches class_public (should be identical since it is a copy)
+- [x] Milestone 1: Bootstrap, test harness, and vanilla baseline
+  - [x] (2026-03-02) Record versions of class_public and class-interacting-neutrinos-PT in REFERENCE file
+  - [x] (2026-03-02) Copy class_public into class_snu_uptodate
+  - [x] (2026-03-02) Build class_snu_uptodate as vanilla CLASS (make clean && make succeeded, also built classy Python wrapper)
+  - [x] (2026-03-02) Create comparison test framework (compare_outputs.py)
+  - [x] (2026-03-02) Create vanilla .ini file (tests/vanilla_sync.ini, synchronous gauge, Planck 2018 best-fit parameters)
+  - [x] (2026-03-02) Run vanilla cases in class_snu_uptodate and verify output is produced (background, Cl, Cl_lensed, Pk files generated)
+  - [x] (2026-03-02) Run compare_outputs.py to confirm class_snu_uptodate matches class_public — verified via two identical runs of class_snu_uptodate (class_public not built per AGENTS.md no-modify policy; source/include/Makefile verified identical by diff)
 - [ ] Milestone 2: SINu reference data generation
   - [ ] Build class-interacting-neutrinos-PT
   - [ ] Create SINu .ini files (massless/massive neutrinos, synchronous gauge)
@@ -71,7 +71,10 @@ A user can verify success by running class_snu_uptodate with the same SINu param
 
 ## Surprises & Discoveries
 
-(To be populated as work proceeds.)
+- Observation: class_public Makefile compiles perturbations.c, arrays.c, hyperspherical.c, primordial.c, transfer.c, harmonic.c, lensing.c, and hmcode.c as C++ via the .opp rule (g++ --std=c++11 -fpermissive -Wno-write-strings). hyperspherical.c emits VLA warnings under clang++ but compiles successfully. This confirms the C++-compatibility requirement documented in Context and Orientation.
+  Evidence: Build output shows `clang++: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated` and two VLA warnings from hyperspherical.c.
+
+- Observation: AGENTS.md prevents building class_public directly (no modifications allowed). For Milestone 1 the comparison was done by verifying source identity via `diff -rq` (source/, include/, Makefile all identical) and then comparing two runs of class_snu_uptodate against itself (zero difference on all 21 background columns, 8 Cl columns, 8 lensed Cl columns, and 2 P(k) columns).
 
 
 ## Decision Log
@@ -95,6 +98,10 @@ A user can verify success by running class_snu_uptodate with the same SINu param
 - Decision: class_public and class-interacting-neutrinos-PT are read-only. All new code goes in class_snu_uptodate. Only additive change to class-interacting-neutrinos-PT is creating validation_data/ to store reference inputs and outputs.
   Rationale: User requirement and AGENTS.md.
   Date/Author: 2026-03-02.
+
+- Decision: For Milestone 1, instead of building class_public (which would violate AGENTS.md no-modify policy), validate source identity via diff and use two runs of class_snu_uptodate to verify deterministic output. Since class_snu_uptodate is a byte-for-byte copy of class_public source, this is equivalent to comparing the two codebases.
+  Rationale: AGENTS.md says "DO NOT CHANGE ANYTHING in the vanilla-class directory: class_public." Building would create build artifacts. Source identity was confirmed with `diff -rq` on source/, include/, and Makefile.
+  Date/Author: 2026-03-02, agent decision.
 
 - Decision: No separate TESTING_SETUP.md file. All build and environment instructions are embedded in this ExecPlan for self-containment.
   Rationale: PLANS.md requires the ExecPlan to be fully self-contained.
@@ -361,7 +368,13 @@ The compare_outputs.py script is idempotent: it reads files and reports results 
 
 ## Artifacts and Notes
 
-(To be populated with build output transcripts, comparison results, diffs, and other evidence as work proceeds.)
+**Milestone 1 artifacts:**
+
+- REFERENCE — records git commit hashes for class_public (e858083) and class-interacting-neutrinos-PT (acd14cb).
+- tests/vanilla_sync.ini — vanilla synchronous gauge test case with Planck 2018 best-fit parameters (h=0.6732, omega_b=0.022383, omega_cdm=0.12011, A_s=2.1005e-9, n_s=0.96605, tau_reio=0.0543, N_ur=3.044). Outputs: tCl, pCl, lCl, mPk with lensing and background.
+- compare_outputs.py — test harness that reads .dat files from two directories, computes column-by-column max relative difference, and reports PASS/FAIL per file. Supports configurable tolerances (--bg-tolerance, --cl-tolerance, --pk-tolerance). Handles CLASS column header format (N:name [unit]).
+- class_snu_uptodate/ — built successfully from class_public source. Executable produces: vanilla_sync_00_background.dat (21 columns, 15921 rows), vanilla_sync_00_cl.dat (8 columns, 2999 rows), vanilla_sync_00_cl_lensed.dat (8 columns, 2999 rows), vanilla_sync_00_pk.dat (2 columns, 556 rows).
+- Comparison result: all columns PASS with max_rel_diff = 0.000000e+00 (bitwise identical between two runs).
 
 
 ## Interfaces and Dependencies
