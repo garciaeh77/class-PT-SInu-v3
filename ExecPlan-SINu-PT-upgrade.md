@@ -96,7 +96,7 @@ A user can verify success by running class_snu_uptodate with the same SINu param
   - Cl TT (lensed): 0.26% max. Cl EE (lensed): 0.22%.
   - Cl TE, phiphi, TPhi, Ephi: Large relative differences (>1%) dominated by zero-crossing artifacts where the spectra change sign.
   The Cl TT and EE differences (0.39% and 0.61%) EXCEED the 0.1% tolerance planned for SINu validation. This means the SINu C_l tolerance must be relaxed or the validation must use a ratio-based approach (comparing SINu/vanilla ratios between versions rather than absolute spectra). See Decision Log for the resolution.
-  Evidence: `python compare_outputs.py --reference class-interacting-neutrinos-PT/validation_data/ref_vanilla_sync --test class_snu_uptodate/output` output (with compare_outputs.py v2 using interpolation and scale-aware relative difference).
+  Evidence: `python compare_outputs.py --reference validation_data/ref_vanilla_sync --test class_snu_uptodate/output` output (with compare_outputs.py v2 using interpolation and scale-aware relative difference).
 
 
 ## Decision Log
@@ -188,7 +188,7 @@ Create a vanilla .ini file (stored in a tests/ directory at the repository root 
 
 Newtonian gauge cases are intentionally excluded from this plan (see Decision Log). The SINu implementation in Newtonian gauge is not yet stable in the original code and should be revisited in future work once the synchronous gauge port is validated and the Newtonian gauge behavior is better characterized.
 
-Each .ini requests background output, P(k), and C_l (TT, EE, TE, and lensed). Place these .ini files in class-interacting-neutrinos-PT/validation_data/. Run class-interacting-neutrinos-PT with each .ini and save the outputs into per-case subdirectories under validation_data/ (e.g. validation_data/ref_vanilla_sync/, validation_data/ref_sinu_sync_massless/, etc.).
+Each .ini requests background output, P(k), and C_l (TT, EE, TE, and lensed). Place these .ini files in the repository root validation_data/ directory. Run class-interacting-neutrinos-PT with each .ini and save the outputs into per-case subdirectories under validation_data/ (e.g. validation_data/ref_vanilla_sync/, validation_data/ref_sinu_sync_massless/, etc.).
 
 Also run the vanilla cases through class_snu_uptodate (which is still just class_public at this point) and compare the vanilla outputs from the two CLASS versions using compare_outputs.py. Document the baseline vanilla differences in the Surprises & Discoveries section. These differences arise from the CLASS version upgrade (different recombination code, numerical improvements, bug fixes) and represent the floor below which we cannot expect SINu outputs to agree. Create a validation_data/MANIFEST.md listing each test case, its .ini file, and which reference outputs are stored.
 
@@ -308,7 +308,7 @@ Create vanilla .ini files in a tests/ directory. Run class_snu_uptodate and clas
     # Measure vanilla baseline between the two CLASS versions
     cd ..
     python compare_outputs.py \
-      --reference class-interacting-neutrinos-PT/validation_data/ref_vanilla_sync \
+      --reference validation_data/ref_vanilla_sync \
       --test class_snu_uptodate/output
 
 (Ensure .ini files use the same root prefix so output file names match, or adjust the comparison script to handle different prefixes.)
@@ -330,10 +330,10 @@ Then run the full test suite:
 
     # SINu validation (after Milestone 4)
     cd class_snu_uptodate
-    ./class ../class-interacting-neutrinos-PT/validation_data/sinu_sync_massless.ini
+    ./class ../validation_data/sinu_sync_massless.ini
     cd ..
     python compare_outputs.py \
-      --reference class-interacting-neutrinos-PT/validation_data/ref_sinu_sync_massless \
+      --reference validation_data/ref_sinu_sync_massless \
       --test class_snu_uptodate/output
 
     # Repeat for each SINu test case
@@ -391,7 +391,7 @@ The implementation is accepted when all of the following hold:
 
 Each milestone can be resumed from where it left off. If a milestone is partially complete, continue editing in class_snu_uptodate without reverting prior work. A failed compilation does not corrupt the source tree; fix the code and rerun make.
 
-To start completely over: remove class_snu_uptodate and copy class_public again. The validation_data/ in class-interacting-neutrinos-PT persists and does not need to be regenerated.
+To start completely over: remove class_snu_uptodate and copy class_public again. The root-level validation_data/ directory persists and does not need to be regenerated.
 
 class_public and class-interacting-neutrinos-PT (except validation_data/) remain unchanged throughout and serve as stable references. If a SINu test case fails tolerance, diff the ported code in class_snu_uptodate against the original in class-interacting-neutrinos-PT to find missing or incorrect logic.
 
