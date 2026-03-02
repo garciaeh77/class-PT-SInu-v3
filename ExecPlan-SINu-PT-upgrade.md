@@ -117,8 +117,8 @@ A user can verify success by running class_snu_uptodate with the same SINu param
   Rationale: Catch bugs early. User specifically requested testing outputs at every step, not just compilation.
   Date/Author: 2026-03-02, user direction.
 
-- Decision: class_public and class-interacting-neutrinos-PT are read-only. All new code goes in class_snu_uptodate. Only additive change to class-interacting-neutrinos-PT is creating validation_data/ to store reference inputs and outputs.
-  Rationale: User requirement and AGENTS.md.
+- Decision: class_public and class-interacting-neutrinos-PT are read-only. All new code goes in class_snu_uptodate. Validation inputs/outputs are stored in root-level validation_data/.
+  Rationale: User requirement and AGENTS.md no-modify policy for reference codebases; root-level validation_data keeps generated references tracked in git without modifying the reference forks.
   Date/Author: 2026-03-02.
 
 - Decision: For Milestone 1, instead of building class_public (which would violate AGENTS.md no-modify policy), validate source identity via diff and use two runs of class_snu_uptodate to verify deterministic output. Since class_snu_uptodate is a byte-for-byte copy of class_public source, this is equivalent to comparing the two codebases.
@@ -159,7 +159,7 @@ The repository root is at the top level of snu-class-update. Three directories a
 
 **class_public/** contains the latest vanilla CLASS (from lesgourg/class_public). This directory must never be modified (per AGENTS.md). It serves as the base for the updated code and as a reference for vanilla behavior. Its module layout is: source files in source/ (background.c, thermodynamics.c, perturbations.c, transfer.c, primordial.c, fourier.c, harmonic.c, lensing.c, distortions.c, output.c, input.c), headers in include/, and the main entry point in main/class.c. In this version of CLASS, CMB angular power spectra are computed in harmonic.c and matter power spectrum and nonlinear corrections (Halofit, HMcode) are in fourier.c. The Makefile compiles perturbations.c as C++ via a .opp rule (the file is C code but compiled with a C++ compiler to enable certain features). Recombination uses HyRec2020 (located in external/HyRec2020/).
 
-**class-interacting-neutrinos-PT/** contains an older CLASS fork with two added capabilities: SINu (self-interacting neutrinos, arXiv:2309.03941) and EFT/CLASS-PT (perturbation theory). Only SINu is in scope for this plan. Its source code must not be edited; only the additive creation of a validation_data/ directory is allowed. Its module layout differs from class_public: it uses spectra.c instead of harmonic.c for CMB spectra, nonlinear.c instead of fourier.c for nonlinear corrections, and has an additional nonlinear_pt.c for EFT/CLASS-PT. It does not have distortions.c. All source files are compiled as plain C (no .opp rules). Recombination uses an older version of hyrec (not HyRec2020). The directory neutrinos_collision_terms/ at the root of class-interacting-neutrinos-PT contains precomputed collision integral data tables (.dat files) required by the SINu perturbation equations.
+**class-interacting-neutrinos-PT/** contains an older CLASS fork with two added capabilities: SINu (self-interacting neutrinos, arXiv:2309.03941) and EFT/CLASS-PT (perturbation theory). Only SINu is in scope for this plan. Its source code must not be edited. Its module layout differs from class_public: it uses spectra.c instead of harmonic.c for CMB spectra, nonlinear.c instead of fourier.c for nonlinear corrections, and has an additional nonlinear_pt.c for EFT/CLASS-PT. It does not have distortions.c. All source files are compiled as plain C (no .opp rules). Recombination uses an older version of hyrec (not HyRec2020). The directory neutrinos_collision_terms/ at the root of class-interacting-neutrinos-PT contains precomputed collision integral data tables (.dat files) required by the SINu perturbation equations.
 
 **class_snu_uptodate/** is the target directory, currently empty. It will be initialized as a copy of class_public and then receive the ported SINu code.
 
@@ -241,7 +241,7 @@ Also verify at this stage that the nonlinear options from class_public (Halofit,
 
 Build classy (make classy or cd python && pip install .). Validate by writing a short Python script that: (1) instantiates the Class object, (2) sets cosmological parameters including SINu parameters, (3) calls compute(), (4) retrieves P(k) and C_l, and (5) compares them to the reference. The Python results should match the CLI results from Milestone 4 to within machine precision (since both use the same underlying C library).
 
-**Milestone 7 — Documentation.** Create validation_data/README.md in class-interacting-neutrinos-PT explaining: what the validation data is, how to regenerate it (build class-interacting-neutrinos-PT and run the .ini files), and how to run the regression tests (build class_snu_uptodate and run compare_outputs.py). Add brief comments in the ported source code (perturbations.c, background.c, input.c) explaining the SINu physics: what the collision terms represent, what the TCA does, and what the trigger parameters control. Create two example Jupyter notebooks in class_snu_uptodate/notebooks/: one demonstrating SINu with massive neutrinos and one with massless neutrinos. Each notebook should use classy to compute and plot C_l and P(k) with and without SINu, showing the effect of the self-interaction.
+**Milestone 7 — Documentation.** Create root-level validation_data/README.md explaining: what the validation data is, how to regenerate it (build class-interacting-neutrinos-PT and run the .ini files), and how to run the regression tests (build class_snu_uptodate and run compare_outputs.py). Add brief comments in the ported source code (perturbations.c, background.c, input.c) explaining the SINu physics: what the collision terms represent, what the TCA does, and what the trigger parameters control. Create two example Jupyter notebooks in class_snu_uptodate/notebooks/: one demonstrating SINu with massive neutrinos and one with massless neutrinos. Each notebook should use classy to compute and plot C_l and P(k) with and without SINu, showing the effect of the self-interaction.
 
 
 ## Concrete Steps
@@ -290,18 +290,21 @@ Create vanilla .ini files in a tests/ directory. Run class_snu_uptodate and clas
     # Build class-interacting-neutrinos-PT
     cd class-interacting-neutrinos-PT
     make clean
-    make
+    make OMPFLAG=""
 
-    # Create validation_data directory and .ini files
+    # Create root-level validation_data directory and .ini files
+    cd ..
     mkdir -p validation_data
 
     # Create .ini files (vanilla_sync.ini, sinu_sync_massless.ini, sinu_sync_massive.ini)
-    # Place them in validation_data/
+    # Place them in root-level validation_data/
 
     # Run each case and save outputs
-    ./class validation_data/vanilla_sync.ini
+    cd class-interacting-neutrinos-PT
+    ./class ../validation_data/vanilla_sync.ini
+    cd ..
     mkdir -p validation_data/ref_vanilla_sync
-    cp output/* validation_data/ref_vanilla_sync/
+    cp class-interacting-neutrinos-PT/output/vanilla_sync_*.dat validation_data/ref_vanilla_sync/
 
     # Repeat for each test case...
 
@@ -393,7 +396,7 @@ Each milestone can be resumed from where it left off. If a milestone is partiall
 
 To start completely over: remove class_snu_uptodate and copy class_public again. The root-level validation_data/ directory persists and does not need to be regenerated.
 
-class_public and class-interacting-neutrinos-PT (except validation_data/) remain unchanged throughout and serve as stable references. If a SINu test case fails tolerance, diff the ported code in class_snu_uptodate against the original in class-interacting-neutrinos-PT to find missing or incorrect logic.
+class_public and class-interacting-neutrinos-PT remain unchanged throughout and serve as stable references. If a SINu test case fails tolerance, diff the ported code in class_snu_uptodate against the original in class-interacting-neutrinos-PT to find missing or incorrect logic.
 
 If the Python wrapper fails to build, ensure that cclassy.pxd declarations match the C header files and that the library (.so or .dylib) was built with the same compiler flags used for make class.
 
