@@ -98,6 +98,12 @@ struct background
   int * ncdm_input_q_size; /**< Vector of numbers of q bins */
   double * ncdm_qmax;      /**< Vector of maximum value of q */
 
+  double log10_G_eff_nu;   /**< Log10 of effective neutrino self-interaction coupling */
+  double G_eff_nu;         /**< Effective neutrino self-interaction coupling */
+  int interacting_nu;      /**< Flag enabling self-interacting neutrinos */
+  int nu_tca_on;           /**< Flag enabling neutrino tight-coupling approximation */
+  int nu_tca_off;          /**< Flag disabling neutrino tight-coupling approximation */
+
   double Omega0_k;         /**< \f$ \Omega_{0_k} \f$: curvature contribution */
 
   double Omega0_lambda;    /**< \f$ \Omega_{0_\Lambda} \f$: cosmological constant */

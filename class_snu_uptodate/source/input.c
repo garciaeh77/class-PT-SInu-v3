@@ -3372,6 +3372,34 @@ int input_read_parameters_species(struct file_content * pfc,
     }
   }
 
+  /* SINu parameters (parsed here; perturbation physics is added in Milestone 4) */
+  class_read_double("log10_G_eff_nu",pba->log10_G_eff_nu);
+
+  if (pba->log10_G_eff_nu < -6.) {
+    pba->G_eff_nu = 0.;
+  }
+  else {
+    pba->G_eff_nu = pow(10.,pba->log10_G_eff_nu);
+  }
+
+  pba->interacting_nu = (pba->G_eff_nu > 0.) ? 1 : 0;
+  class_read_int("interacting_nu",pba->interacting_nu);
+  class_read_int("nu_tca_on",pba->nu_tca_on);
+  class_read_int("nu_tca_off",pba->nu_tca_off);
+
+  if (pba->interacting_nu == 0) {
+    pba->G_eff_nu = 0.;
+  }
+  else {
+    class_test(pba->G_eff_nu <= 0.,
+               errmsg,
+               "You set interacting_nu=1 but log10_G_eff_nu leads to G_eff_nu <= 0. Increase log10_G_eff_nu.");
+    class_read_double("tight_coupling_trigger_tau_nu_over_tau_h",ppr->tight_coupling_trigger_tau_nu_over_tau_h);
+    class_read_double("tight_coupling_trigger_tau_nu_over_tau_k",ppr->tight_coupling_trigger_tau_nu_over_tau_k);
+    class_read_double("full_hierarchy_trigger_tau_nu_over_tau_k",ppr->full_hierarchy_trigger_tau_nu_over_tau_k);
+    class_read_double("start_small_k_at_tau_nu_over_tau_h",ppr->start_small_k_at_tau_nu_over_tau_h);
+  }
+
   return _SUCCESS_;
 
 }
@@ -5828,6 +5856,11 @@ int input_default_params(struct background *pba,
   /** 3.a) Effective squared sound speed and viscosity parameter */
   ppt->three_ceff2_ur=1.;
   ppt->three_cvis2_ur=1.;
+  pba->log10_G_eff_nu = -12.;
+  pba->G_eff_nu = 0.;
+  pba->interacting_nu = 0;
+  pba->nu_tca_on = 1;
+  pba->nu_tca_off = 1;
 
   /** 4) CDM density */
   pba->Omega0_cdm = 0.1201075/pow(pba->h,2);

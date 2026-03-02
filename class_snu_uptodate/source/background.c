@@ -1801,6 +1801,12 @@ int background_checks(
   /** - in verbose mode, send to standard output some additional information on non-obvious background parameters */
   if (pba->background_verbose > 0) {
 
+    if (pba->interacting_nu != 0) {
+      printf(" -> interacting neutrinos enabled with G_eff_nu = %g (log10_G_eff_nu = %g)\n",
+             pba->G_eff_nu,
+             pba->log10_G_eff_nu);
+    }
+
     if (pba->has_ncdm == _TRUE_) {
 
       /* loop over ncdm species */
