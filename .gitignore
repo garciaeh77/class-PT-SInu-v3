@@ -53,3 +53,7 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Reference CLASS codebases (read-only, not tracked)
+class_public/
+class-interacting-neutrinos-PT/
