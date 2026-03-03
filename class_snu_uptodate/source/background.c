@@ -564,6 +564,25 @@ int background_functions(
     rho_r += pvecback[pba->index_bg_rho_ur];
   }
 
+  /* SINu interaction rates */
+  if (pba->interacting_nu != 0) {
+    if (pba->has_ur == _TRUE_) {
+      /* Gamma_ur = a * G_eff^2 * T_ur^5 (in Mpc^-1 units), T_ur = T_cmb * (4/11)^(1/3) / a */
+      pvecback[pba->index_bg_Gamma_ur] = a * pow(pba->G_eff_nu*1e-12,2) *
+        pow(pba->T_cmb * pow(4./11.,1./3.) * _k_B_ / _eV_ / a, 5) *
+        _Mpc_over_m_ * _eV_ / (_h_P_ * _c_);
+    }
+    if (pba->has_ncdm == _TRUE_) {
+      int n_ncdm_gamma;
+      for (n_ncdm_gamma=0; n_ncdm_gamma<pba->N_ncdm; n_ncdm_gamma++) {
+        /* Gamma_ncdm = a * G_eff^2 * T_ncdm^5 (in Mpc^-1 units) */
+        pvecback[pba->index_bg_Gamma_ncdm1+n_ncdm_gamma] = a * pow(pba->G_eff_nu*1e-12,2) *
+          pow(pba->T_cmb * pba->T_ncdm[n_ncdm_gamma] * _k_B_ / _eV_ / a, 5) *
+          _Mpc_over_m_ * _eV_ / (_h_P_ * _c_);
+      }
+    }
+  }
+
   /* interacting dark radiation */
   if (pba->has_idr == _TRUE_) {
     pvecback[pba->index_bg_rho_idr] = pba->Omega0_idr * pow(pba->H0,2) / pow(a,4);
@@ -1056,6 +1075,12 @@ int background_indices(
   class_define_index(pba->index_bg_rho_ncdm1,pba->has_ncdm,index_bg,pba->N_ncdm);
   class_define_index(pba->index_bg_p_ncdm1,pba->has_ncdm,index_bg,pba->N_ncdm);
   class_define_index(pba->index_bg_pseudo_p_ncdm1,pba->has_ncdm,index_bg,pba->N_ncdm);
+
+  /* SINu interaction rate indices */
+  if (pba->interacting_nu != 0) {
+    class_define_index(pba->index_bg_Gamma_ncdm1,pba->has_ncdm,index_bg,pba->N_ncdm);
+    class_define_index(pba->index_bg_Gamma_ur,pba->has_ur,index_bg,1);
+  }
 
   /* - index for dcdm */
   class_define_index(pba->index_bg_rho_dcdm,pba->has_dcdm,index_bg,1);

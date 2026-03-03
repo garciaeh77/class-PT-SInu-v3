@@ -39,19 +39,19 @@ A user can verify success by running class_snu_uptodate with the same SINu param
   - [x] (2026-03-02) Validate: vanilla regression passes (class_snu_uptodate vanilla output unchanged from Milestone 1)
   - [x] (2026-03-02) Validate: SINu .ini file parses without error and parameters are read correctly (verified with tests/sinu_parse_check.ini and background verbose output)
   - [x] (2026-03-02) Validate: massless-SINu background output matches reference within 0.01% for physical background quantities (growth diagnostics gr.fac. D/f retain known cross-version mismatch)
-- [ ] Milestone 4: Port SINu perturbations (core physics)
-  - [ ] Diff class-interacting-neutrinos-PT/source/perturbations.c vs class_public/source/perturbations.c to identify all SINu-specific changes
-  - [ ] Port SINu collision terms to class_snu_uptodate/source/perturbations.c
-  - [ ] Port TCA (tight-coupling approximation) logic for SINu
-  - [ ] Port SINu initial conditions for the perturbation vector
-  - [ ] Copy neutrinos_collision_terms/ data directory into class_snu_uptodate
-  - [ ] Add any needed SINu precision parameters to perturbations.h
-  - [ ] Ensure all ported code compiles as C++ (class_public compiles perturbations.c via .opp rule)
-  - [ ] Validate: code compiles
-  - [ ] Validate: vanilla regression passes
-  - [ ] Validate: SINu P(k) matches reference within 0.1% (synchronous gauge)
-  - [ ] Validate: SINu C_l TT/EE matches reference within 1.0% (synchronous gauge; relaxed from 0.1% per Decision Log)
-  - [ ] Validate: both massive and massless neutrino cases pass
+- [x] Milestone 4: Port SINu perturbations (core physics)
+  - [x] (2026-03-03) Diff class-interacting-neutrinos-PT/source/perturbations.c vs class_public/source/perturbations.c to identify all SINu-specific changes
+  - [x] (2026-03-03) Port SINu collision terms to class_snu_uptodate/source/perturbations.c
+  - [x] (2026-03-03) Port TCA (tight-coupling approximation) logic for SINu
+  - [x] (2026-03-03) Port SINu initial conditions for the perturbation vector
+  - [x] (2026-03-03) Copy neutrinos_collision_terms/ data directory into class_snu_uptodate
+  - [x] (2026-03-03) Add any needed SINu precision parameters to perturbations.h
+  - [x] (2026-03-03) Ensure all ported code compiles as C++ (class_public compiles perturbations.c via .opp rule)
+  - [x] (2026-03-03) Validate: code compiles
+  - [x] (2026-03-03) Validate: vanilla regression passes
+  - [x] (2026-03-03) Validate: SINu P(k) matches reference within 0.1% — massless: 0.021%, massive: 0.021% (PASS)
+  - [x] (2026-03-03) Validate: SINu C_l TT/EE matches reference within 1.0% — massless TT: 0.42%/EE: 0.59%, massive TT: 0.41%/EE: 0.60% (PASS)
+  - [x] (2026-03-03) Validate: both massive and massless neutrino cases pass
 - [ ] Milestone 5: Port remaining SINu changes and integration
   - [ ] Diff and assess thermodynamics module for SINu-specific changes; port if any
   - [ ] Diff and assess transfer module for SINu-specific changes; port if any
@@ -103,6 +103,10 @@ A user can verify success by running class_snu_uptodate with the same SINu param
 
 - Observation: In the SINu massive-neutrino case, background differences between class_snu_uptodate and old reference are at the 0.1-0.3% level for several background quantities (and larger for rho_ur), so the 0.01% background target is not met there yet. This likely combines cross-version baseline differences for massive-neutrino cosmologies and remaining SINu-physics differences that are expected to be addressed in Milestone 4 (perturbations port).
   Evidence: `./class ../validation_data/sinu_sync_massive.ini` followed by `python compare_outputs.py --reference validation_data/ref_sinu_sync_massive --test class_snu_uptodate/output`.
+
+- Observation (IMPORTANT — Milestone 4): The SINu massive-neutrino case crashed (SIGSEGV/exit code 139) immediately after entering the k-mode parallel loop due to out-of-bounds memory writes in `perturbations_initial_conditions`. Two bugs were present: (1) the code unconditionally wrote `shear_ur` and `l3_ur` into the perturbation vector at initial conditions time, but in the nu_tca_on approximation those indices are never defined in the vector (only `delta_ur` and `theta_ur` exist), causing writes to garbage addresses; (2) the ncdm IC code wrote to `y[idx+2]` and `y[idx+3]` regardless of the vector's `l_max_ncdm`, but in nu_tca_on mode `l_max_ncdm=1` so only 2 slots exist per q-bin (l=0, l=1). The massless case did not crash because it has no ncdm species and the massless ur TCA uses a different approximation path. The bug was diagnosed via AddressSanitizer (`-fsanitize=address`), which reported a BUS error on a write to a high-value (garbage) address, confirming the uninitialized-index access pattern.
+  Fix: Guard the `shear_ur`/`l3_ur` writes in `perturbations_initial_conditions` with `if (pba->interacting_nu == 0. || ppw->approx[ppw->index_ap_nu_tca] == nu_tca_off)`, and guard the ncdm `idx+2`/`idx+3` writes with `if (ppw->pv->l_max_ncdm[n_ncdm] >= 2/3)`.
+  Evidence: AddressSanitizer output `BUS on unknown address ... caused by WRITE memory access ... dereference of high value address`; ASAN reported zero errors after fix.
 
 
 ## Decision Log
@@ -158,6 +162,15 @@ A user can verify success by running class_snu_uptodate with the same SINu param
 - Rebuilt successfully (`make clean && make`), and vanilla regression remains bitwise-identical to class_public outputs.
 - Verified SINu parameter parsing with a dedicated check case (`tests/sinu_parse_check.ini`): runtime reports `G_eff_nu = 0.0316228` for `log10_G_eff_nu = -1.5`.
 - Compared against old SINu references: massless case has all physical background quantities within 0.01% (except growth diagnostics D/f), while the massive case shows larger (0.1-0.3%) background-level discrepancies that remain to be resolved in later milestones.
+
+**Milestone 4 outcomes (2026-03-03):**
+- Ported all SINu-specific changes from `perturbations.c` (collision terms, TCA logic for ur and ncdm, approximation switches, initial conditions, timescale computation, source terms) into `class_snu_uptodate/source/perturbations.c`.
+- Added SINu declarations (`enum nu_tca_flags`, `index_ap_nu_tca`, data arrays) to `perturbations.h` and collision file paths to `precisions.h`.
+- Copied `neutrinos_collision_terms/` data directory containing `Coll_integrals_5_qbins.dat` (5 q-bins, 18 ell values, for massive ncdm) and `Massless_alpha_l.dat` (18 ell values, for massless ur).
+- Found and fixed a critical segfault (SIGSEGV) in the massive-neutrino case caused by out-of-bounds writes in `perturbations_initial_conditions`: the initial condition code unconditionally wrote `shear_ur` and `l3_ur` to the perturbation vector even when those slots don't exist in the TCA-on state, and similarly wrote `psi_2` and `psi_3` for ncdm beyond the truncated l_max=1 stride. Fixed by guarding these writes with `nu_tca_off` checks and `l_max_ncdm >= 2/3` guards. Bug confirmed with AddressSanitizer (detected as BUS/write to high-value address).
+- Validated massless case: P(k) 0.021%, C_l TT 0.42%, C_l EE 0.59% — all PASS.
+- Validated massive case: P(k) 0.021%, C_l TT 0.41%, C_l EE 0.60% — all PASS.
+- Remaining FAIL items are all expected: gr.fac. D/f (cross-version normalization mismatch, documented in Milestone 2), C_l TE/TPhi/Ephi (zero-crossing artifacts, require ratio-based comparison), C_l phiphi/BB (HyRec2020 baseline at ~2-3%, slightly exceeding 1% tolerance but consistent with version-level baseline effects).
 
 **Deferred items for future ExecPlans:**
 

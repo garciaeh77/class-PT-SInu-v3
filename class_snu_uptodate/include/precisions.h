@@ -305,6 +305,11 @@ class_precision_parameter(tight_coupling_trigger_tau_nu_over_tau_h,double,0.001)
 class_precision_parameter(tight_coupling_trigger_tau_nu_over_tau_k,double,0.001)
 class_precision_parameter(full_hierarchy_trigger_tau_nu_over_tau_k,double,1.e4)
 
+/* SINu collision integral data files (paths relative to base_path) */
+class_string_parameter(interacting_C_ell_file_syn,"/neutrinos_collision_terms/Coll_integrals_5_qbins.dat","interacting_Cl_file_syn")
+class_string_parameter(interacting_C_ell_file_new,"/neutrinos_collision_terms/Coll_integrals_11_qbins.dat","interacting_Cl_file_new")
+class_string_parameter(interacting_alpha_ell_file,"/neutrinos_collision_terms/Massless_alpha_l.dat","interacting_alphal_file")
+
 class_precision_parameter(tight_coupling_approximation,int,(int)compromise_CLASS) /**< method for tight coupling approximation */
 
 class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_k,double,0.01)  /**< when to switch off the dark-tight-coupling approximation, first condition (see normal tca for full definition) */

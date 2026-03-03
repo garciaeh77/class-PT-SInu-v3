@@ -3398,6 +3398,8 @@ int input_read_parameters_species(struct file_content * pfc,
     class_read_double("tight_coupling_trigger_tau_nu_over_tau_k",ppr->tight_coupling_trigger_tau_nu_over_tau_k);
     class_read_double("full_hierarchy_trigger_tau_nu_over_tau_k",ppr->full_hierarchy_trigger_tau_nu_over_tau_k);
     class_read_double("start_small_k_at_tau_nu_over_tau_h",ppr->start_small_k_at_tau_nu_over_tau_h);
+    class_read_int("ufa_corrections",ppt->ufa_corrections);
+    class_read_int("ncdmfa_corrections",ppt->ncdmfa_corrections);
   }
 
   return _SUCCESS_;
@@ -5861,6 +5863,8 @@ int input_default_params(struct background *pba,
   pba->interacting_nu = 0;
   pba->nu_tca_on = 1;
   pba->nu_tca_off = 1;
+  ppt->ufa_corrections = 1;
+  ppt->ncdmfa_corrections = 1;
 
   /** 4) CDM density */
   pba->Omega0_cdm = 0.1201075/pow(pba->h,2);

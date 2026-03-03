@@ -30,6 +30,7 @@ enum tca_idm_dr_flags {tca_idm_dr_on, tca_idm_dr_off};
 enum rsa_idr_flags {rsa_idr_off, rsa_idr_on};
 enum ufa_flags {ufa_off, ufa_on};
 enum ncdmfa_flags {ncdmfa_off, ncdmfa_on};
+enum nu_tca_flags {nu_tca_on, nu_tca_off}; /**< SINu neutrino tight-coupling approximation flags */
 
 //@}
 
@@ -448,6 +449,25 @@ struct perturbations
 
   //@}
 
+  /** @name - SINu collision integral tables (loaded from neutrinos_collision_terms/) */
+
+  //@{
+
+  int num_q_collision;    /**< number of momentum bins in collision integral table */
+
+  double * q_collision;   /**< momentum bin values */
+  double * ell;           /**< multipole values (massive/Newtonian gauge collision table) */
+  double * C_ell;         /**< collision integrals C_ell[index_ell*num_q + index_q] */
+  double * ddC_ell;       /**< spline second derivatives of C_ell for interpolation */
+
+  int    * ell_2;         /**< multipole values (massless/synchronous collision table) */
+  double * alpha_ell;     /**< alpha_ell coefficients for massless neutrino TCA */
+
+  short ufa_corrections;    /**< whether to include interaction corrections in ur fluid approximation (SINu) */
+  short ncdmfa_corrections; /**< whether to include interaction corrections in ncdm fluid approximation (SINu) */
+
+  //@}
+
 };
 
 /**
@@ -635,6 +655,7 @@ struct perturbations_workspace
   int index_ap_rsa_idr; /**< index for dark radiation streaming approximation */
   int index_ap_ufa; /**< index for ur fluid approximation */
   int index_ap_ncdmfa; /**< index for ncdm fluid approximation */
+  int index_ap_nu_tca; /**< index for SINu neutrino tight-coupling approximation */
   int ap_size;      /**< number of relevant approximations for a given mode */
 
   int * approx;     /**< array of approximation flags holding at a given time: approx[index_ap] */
@@ -974,6 +995,15 @@ extern "C" {
                                             struct perturbations_workspace * ppw,
                                             ErrorMsg error_message
                                             );
+
+  int perturbations_collision_C_ell(struct precision * ppr,
+                                    struct background * pba,
+                                    struct perturbations * ppt);
+
+  int perturbations_collision_alpha_ell(struct precision * ppr,
+                                        struct perturbations * ppt);
+
+  int perturbations_collision_free(struct perturbations * ppt);
 
 #ifdef __cplusplus
 }
