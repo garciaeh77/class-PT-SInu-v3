@@ -848,7 +848,21 @@ int perturbations_init(
     _omegab_BIG_);
   */
 
-  /* Load SINu collision integrals if interacting neutrinos are present */
+  /* --- SINu collision integral initialisation ---
+   *
+   * When SINu is active, load the precomputed collision integral tables from
+   * the neutrinos_collision_terms/ directory:
+   *   - Massless_alpha_l.dat: angular coefficients alpha_ell for the massless
+   *     neutrino (ur) Boltzmann hierarchy; alpha_ell multiplies the l-th multipole
+   *     in the collision term dy[l] += -alpha_ell * F_l / tau_nu.
+   *   - Coll_integrals_5_qbins.dat: momentum-dependent collision matrix for
+   *     massive ncdm neutrinos (5 q-bins); used to compute the collision-term
+   *     contribution to each (q-bin, l) element of the ncdm distribution function.
+   *
+   * These tables encode the linearised 2->2 neutrino scattering matrix elements
+   * integrated over the equilibrium phase-space distribution. They are computed
+   * once and reused for all k-modes.
+   */
   if (pba->interacting_nu != 0.) {
     class_call(perturbations_collision_alpha_ell(ppr,ppt),
                pth->error_message,
@@ -10006,7 +10020,30 @@ int perturbations_derivs(double tau,
       /** End of non-interacting block */
       }
       else {
-        /** Interacting block */
+        /** --- SINu interacting neutrino block ---
+         *
+         * The SINu Boltzmann equations differ from the standard (free-streaming)
+         * equations by an additional collision term in each multipole equation:
+         *
+         *   dF_l/dtau = [standard free-streaming terms] - alpha_ell * F_l / tau_nu
+         *
+         * where tau_nu = 1/Gamma_nu is the neutrino mean-free-path (interaction
+         * timescale) and alpha_ell are angular coefficients read from the data file.
+         * The collision term damps the distribution towards isotropy; higher multipoles
+         * are suppressed more strongly (larger alpha_ell).
+         *
+         * Two approximation regimes are used:
+         *   nu_tca_on  (tight coupling): tau_nu << tau_H; hierarchy truncated to
+         *              delta+theta with analytic matching conditions at TCA onset.
+         *              Activates when tau_nu/tau_H < tight_coupling_trigger_tau_nu_over_tau_h.
+         *   nu_tca_off (full hierarchy): tau_nu ~ tau_H or larger; full multipole
+         *              chain solved including alpha_ell collision terms.
+         *              Activates when tau_nu/tau_k > full_hierarchy_trigger_tau_nu_over_tau_k.
+         *
+         * The switch from nu_tca_on to nu_tca_off uses the analytic TCA matching
+         * relations (analogous to standard photon TCA) to initialise the higher
+         * multipoles from the low-order ones.
+         */
 
         if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) {
 

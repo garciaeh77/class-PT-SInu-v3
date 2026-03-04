@@ -66,10 +66,11 @@ A user can verify success by running class_snu_uptodate with the same SINu param
   - [x] (2026-03-03) Build classy (make classy succeeded, classy-3.3.4.0 installed)
   - [x] (2026-03-03) Validate: Python script sets SINu parameters, computes, and retrieves P(k) and C_l — massless and massive cases both work
   - [x] (2026-03-03) Validate: classy results match CLI results — massless TT: 4.5e-13, EE: 4.8e-13, P(k): 8.2e-13; massive TT: 4.2e-13, EE: 4.8e-13, P(k): 7.1e-13 (all machine precision, PASS)
-- [ ] Milestone 7: Documentation
-  - [ ] Create validation_data/README.md explaining how to generate references and run tests
-  - [ ] Add code comments documenting the SINu physics in perturbations, background, and input
-  - [ ] Create example Jupyter notebooks (SINu with massive neutrinos, SINu with massless neutrinos)
+- [x] Milestone 7: Documentation
+  - [x] (2026-03-03) Create validation_data/README.md explaining validation data contents, how to regenerate references, how to run regression tests, and expected tolerances
+  - [x] (2026-03-03) Add code comments documenting SINu physics in input.c (parameter parsing block), background.c (interaction rate computation), and perturbations.c (collision integral loading and Boltzmann hierarchy equations)
+  - [x] (2026-03-03) Create class_snu_uptodate/notebooks/sinu_massless_neutrinos.ipynb — demonstrates SINu with massless neutrinos, plots C_l TT/EE and P(k) absolute and ratio vs vanilla for three coupling values
+  - [x] (2026-03-03) Create class_snu_uptodate/notebooks/sinu_massive_neutrinos.ipynb — demonstrates SINu with one massive neutrino (0.06 eV), plots C_l TT/EE and P(k) ratios, and includes four-way comparison (mass × SINu) on P(k)
 
 
 ## Surprises & Discoveries
@@ -200,6 +201,15 @@ A user can verify success by running class_snu_uptodate with the same SINu param
 - Validated massless SINu case via Python: C_l TT/EE computed, P(k) retrieved, SINu getter properties return correct values (G_eff_nu = 0.03162, log10_G_eff_nu = -1.5, interacting_nu = 1; vanilla case returns 0/0).
 - Validated classy results match CLI results to machine precision: massless TT 4.5e-13, EE 4.8e-13, P(k) 8.2e-13; massive TT 4.2e-13, EE 4.8e-13, P(k) 7.1e-13. PASS on all quantities.
 - Created `tests/validate_classy_vs_cli.py` which runs the full CLI and classy comparison for both SINu massless and massive cases with proper unit conversions (CLI stores l(l+1)C_l/2pi; classy returns raw C_l; CLI P(k) in (Mpc/h)^3 vs classy Mpc^3).
+
+**Milestone 7 outcomes (2026-03-03):**
+- Created `validation_data/README.md` with a comprehensive reference covering: directory contents, test cosmology parameters, regeneration instructions (building class-interacting-neutrinos-PT, running each .ini, copying outputs), CLI regression test commands, validation tolerances and measured results table, Python wrapper validation command, and a reference code information table.
+- Added targeted SINu physics documentation comments to three source files:
+  - `input.c`: block comment above the SINu parameter parsing code explaining the G_eff coupling, its units, the TCA concept, and trigger parameters; cites arXiv:2309.03941.
+  - `background.c`: block comment above the Gamma_nu computation explaining the rate formula Gamma ~ G_eff^2 * T_nu^5, unit convention, and how this rate feeds the TCA switch in perturbations.c.
+  - `perturbations.c`: two block comments — one above the data file loading explaining the Massless_alpha_l.dat and Coll_integrals_5_qbins.dat tables and what they encode; one above the interacting Boltzmann hierarchy block explaining the collision term structure, the alpha_ell angular coefficients, and the nu_tca_on/nu_tca_off regime transition.
+- Created `class_snu_uptodate/notebooks/sinu_massless_neutrinos.ipynb`: 5-cell notebook demonstrating SINu with N_ur=3.044 (all massless). Uses classy to compute and plot C_l^TT, C_l^EE, and P(k) both absolute and as ratios to vanilla, for three coupling values (log10_G_eff_nu = -2.0, -1.5, -1.0). Notebook code verified to execute correctly.
+- Created `class_snu_uptodate/notebooks/sinu_massive_neutrinos.ipynb`: 6-cell notebook demonstrating SINu with one massive neutrino (m_ncdm=0.06 eV). Includes the same TT/EE/P(k) plots plus an additional four-way comparison panel (mass×SINu) that isolates the individual and combined contributions of neutrino mass and self-interaction to P(k). Notebook code verified to execute correctly.
 
 **Deferred items for future ExecPlans:**
 

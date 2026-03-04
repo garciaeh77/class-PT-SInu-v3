@@ -3372,7 +3372,24 @@ int input_read_parameters_species(struct file_content * pfc,
     }
   }
 
-  /* SINu parameters (parsed here; perturbation physics is added in Milestone 4) */
+  /* --- Self-Interacting Neutrinos (SINu) parameter parsing ---
+   *
+   * SINu adds Fermi-like 4-neutrino contact self-interactions with effective
+   * coupling G_eff_nu (in units of 1/GeV^2, analogous to G_F for weak interactions).
+   * The interaction strength is specified as log10_G_eff_nu = log10(G_eff_nu [GeV^-2]).
+   * G_eff_nu ~ 10^{-1.5} GeV^{-2} corresponds to moderate self-interaction.
+   *
+   * When enabled (interacting_nu = 1), the neutrino Boltzmann hierarchy in
+   * perturbations.c gains collision terms proportional to G_eff_nu^2 that
+   * damp higher multipoles and isotropize the distribution.
+   *
+   * The tight-coupling approximation (TCA, controlled by nu_tca_on/nu_tca_off)
+   * truncates the hierarchy to delta+theta when the collision rate Gamma_nu >> aH,
+   * switching to the full hierarchy as the universe expands and collisions become rare.
+   * The trigger parameters below set when the TCA activates and deactivates.
+   *
+   * Reference: arXiv:2309.03941 (Camarena, Fogli, Lesgourgues, Smirnov)
+   */
   class_read_double("log10_G_eff_nu",pba->log10_G_eff_nu);
 
   if (pba->log10_G_eff_nu < -6.) {

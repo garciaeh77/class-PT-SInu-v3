@@ -564,7 +564,19 @@ int background_functions(
     rho_r += pvecback[pba->index_bg_rho_ur];
   }
 
-  /* SINu interaction rates */
+  /* --- SINu neutrino interaction rates ---
+   *
+   * The neutrino self-interaction rate (collision rate) is:
+   *   Gamma_nu ~ G_eff_nu^2 * T_nu^5
+   * where T_nu is the local neutrino temperature. The factor (G_eff_nu * 1e-12)
+   * converts G_eff_nu from GeV^{-2} to natural CLASS units (Mpc^{-1}·eV^{-4}).
+   * This rate is stored in the background vector and used in perturbations.c
+   * to compute the neutrino mean-free-path tau_nu = 1/Gamma_nu, which controls
+   * both the collision terms and the TCA switch.
+   *
+   * The TCA is active (nu_tca_on) when tau_nu << tau_H = 1/(aH),
+   * i.e. when collisions are frequent compared to the Hubble time.
+   */
   if (pba->interacting_nu != 0) {
     if (pba->has_ur == _TRUE_) {
       /* Gamma_ur = a * G_eff^2 * T_ur^5 (in Mpc^-1 units), T_ur = T_cmb * (4/11)^(1/3) / a */
