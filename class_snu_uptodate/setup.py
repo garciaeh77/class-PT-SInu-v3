@@ -72,7 +72,7 @@ classy_ext.cython_directives = {'language_level': "3" if sys.version_info.major>
 def package_files(directory):
     paths = []
     direcs = []
-    wanted_paths = {os.path.join(directory, d) for d in ["tools", "source", "main", "python", "include"]}
+    wanted_paths = {os.path.join(directory, d) for d in ["tools", "source", "main", "python", "include", "neutrinos_collision_terms"]}
     for (path, directories, filenames) in os.walk(directory):
         # Only include those directories that we actually want
         if (path in wanted_paths or

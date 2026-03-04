@@ -102,6 +102,9 @@ cdef extern from "class.h":
         double Omega0_k
         int bt_size
         double Omega0_m
+        double log10_G_eff_nu
+        double G_eff_nu
+        int interacting_nu
         double Omega0_r
         double Omega0_de
         double a_eq

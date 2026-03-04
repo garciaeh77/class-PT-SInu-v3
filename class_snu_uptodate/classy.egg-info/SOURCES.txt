@@ -97,6 +97,9 @@ setup.py
 ./include/transfer.h
 ./include/trigonometric_integrals.h
 ./main/class.c
+./neutrinos_collision_terms/Coll_integrals_11_qbins.dat
+./neutrinos_collision_terms/Coll_integrals_5_qbins.dat
+./neutrinos_collision_terms/Massless_alpha_l.dat
 ./python/README
 ./python/cclassy.pxd
 ./python/classy.cpp
@@ -222,6 +225,9 @@ include/thermodynamics.h
 include/transfer.h
 include/trigonometric_integrals.h
 main/class.c
+neutrinos_collision_terms/Coll_integrals_11_qbins.dat
+neutrinos_collision_terms/Coll_integrals_5_qbins.dat
+neutrinos_collision_terms/Massless_alpha_l.dat
 python/README
 python/cclassy.pxd
 python/classy.cpp

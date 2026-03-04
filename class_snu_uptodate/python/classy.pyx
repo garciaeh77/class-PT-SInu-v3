@@ -194,6 +194,21 @@ cdef class Class:
       self.compute(["background"])
       return CallableFloat(self.ba.Neff)
     @property
+    def G_eff_nu(self):
+      """Return G_eff_nu, the effective neutrino self-interaction coupling constant (units of 1/GeV^2). Returns 0 when SINu is disabled."""
+      self.compute(["background"])
+      return CallableFloat(self.ba.G_eff_nu)
+    @property
+    def log10_G_eff_nu(self):
+      """Return log10(G_eff_nu), the base-10 logarithm of the effective neutrino self-interaction coupling. Returns -inf when SINu is disabled."""
+      self.compute(["background"])
+      return CallableFloat(self.ba.log10_G_eff_nu)
+    @property
+    def interacting_nu(self):
+      """Return the interacting_nu flag (1 if SINu is enabled, 0 otherwise)."""
+      self.compute(["background"])
+      return int(self.ba.interacting_nu)
+    @property
     def T_cmb(self):
       """Return the photon temperature T_cmb (units of K) evaluated at z=0"""
       return CallableFloat(self.ba.T_cmb)

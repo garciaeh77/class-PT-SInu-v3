@@ -59,12 +59,13 @@ A user can verify success by running class_snu_uptodate with the same SINu param
   - [x] (2026-03-03) Diff and assess output module for SINu-specific changes; port if any — no SINu-specific changes found
   - [x] (2026-03-03) Validate: full test suite passes (all vanilla and SINu cases, synchronous gauge, both neutrino mass options)
   - [x] (2026-03-03) Validate: Halofit and HMcode run without error when SINu is enabled
-- [ ] Milestone 6: Python wrapper
-  - [ ] Add SINu parameter declarations to python/cclassy.pxd
-  - [ ] Add SINu parameter handling to python/classy.pyx
-  - [ ] Build classy (make classy or pip install)
-  - [ ] Validate: Python script sets SINu parameters, computes, and retrieves P(k) and C_l
-  - [ ] Validate: classy results match CLI results for the same input parameters
+- [x] Milestone 6: Python wrapper
+  - [x] (2026-03-03) Add SINu parameter declarations to python/cclassy.pxd (log10_G_eff_nu, G_eff_nu, interacting_nu added to background struct)
+  - [x] (2026-03-03) Add SINu parameter handling to python/classy.pyx (getter properties G_eff_nu, log10_G_eff_nu, interacting_nu added)
+  - [x] (2026-03-03) Fix setup.py to include neutrinos_collision_terms/ in package data (so pip-installed classy can find data files)
+  - [x] (2026-03-03) Build classy (make classy succeeded, classy-3.3.4.0 installed)
+  - [x] (2026-03-03) Validate: Python script sets SINu parameters, computes, and retrieves P(k) and C_l — massless and massive cases both work
+  - [x] (2026-03-03) Validate: classy results match CLI results — massless TT: 4.5e-13, EE: 4.8e-13, P(k): 8.2e-13; massive TT: 4.2e-13, EE: 4.8e-13, P(k): 7.1e-13 (all machine precision, PASS)
 - [ ] Milestone 7: Documentation
   - [ ] Create validation_data/README.md explaining how to generate references and run tests
   - [ ] Add code comments documenting the SINu physics in perturbations, background, and input
@@ -109,6 +110,9 @@ A user can verify success by running class_snu_uptodate with the same SINu param
   Fix: Guard the `shear_ur`/`l3_ur` writes in `perturbations_initial_conditions` with `if (pba->interacting_nu == 0. || ppw->approx[ppw->index_ap_nu_tca] == nu_tca_off)`, and guard the ncdm `idx+2`/`idx+3` writes with `if (ppw->pv->l_max_ncdm[n_ncdm] >= 2/3)`.
   Evidence: AddressSanitizer output `BUS on unknown address ... caused by WRITE memory access ... dereference of high value address`; ASAN reported zero errors after fix.
 
+
+- Observation (Milestone 6): The classy `setup.py` uses a `package_files()` function that includes specific subdirectories (`tools`, `source`, `main`, `python`, `include`, `external`) in the pip wheel, but did not include `neutrinos_collision_terms/`. When pip installs classy, it sets `CLASSDIR` (embedded in libclass.a) to the site-packages installation path. Since the collision integral data files were never copied to site-packages, `input_read_precisions` would fail to open them at runtime. Fix: add `"neutrinos_collision_terms"` to the `wanted_paths` set. After rebuild, calling from Python without explicit `base_path` works correctly.
+  Evidence: Error message `perturbations_collision_alpha_ell` with empty inner message (file open failure produces `could not open ...` error that went silent due to message buffer handling). Setting `base_path` explicitly in Python confirmed the root cause. Post-fix: data files appear at `site-packages/classy/neutrinos_collision_terms/`.
 
 - Observation (Milestone 5): None of the four remaining modules (thermodynamics.c, transfer.c, lensing.c, output.c) contain any SINu-specific code in class-interacting-neutrinos-PT. The grep for G_eff_nu, interacting_nu, nu_tca, and collision_term returns zero matches in all four source files and their headers. This confirms that the SINu implementation is entirely self-contained in input.c, background.c/h, and perturbations.c. Halofit and HMcode from class_public work without any modification alongside SINu perturbation physics.
 
@@ -187,6 +191,15 @@ A user can verify success by running class_snu_uptodate with the same SINu param
   - `non_linear = hmcode` with SINu (massless case): completes without error, produces pk, pk_nl, and pk_analytic_nowiggle output files.
 - Created two new test ini files: `tests/sinu_halofit_check.ini` and `tests/sinu_hmcode_check.ini`.
 - Milestone 5 is complete. No new code was ported (no changes were needed). The SINu port is fully contained in input.c, background.h/c, perturbations.h/c (Milestones 3–4).
+
+**Milestone 6 outcomes (2026-03-03):**
+- Added `log10_G_eff_nu`, `G_eff_nu`, and `interacting_nu` to the `background` struct declaration in `python/cclassy.pxd`, exposing the SINu fields for Python-level access.
+- Added three Python properties to `class_snu_uptodate/python/classy.pyx`: `G_eff_nu`, `log10_G_eff_nu`, and `interacting_nu`, returning the SINu coupling from the background structure.
+- Found and fixed a critical packaging bug: `setup.py` did not include the `neutrinos_collision_terms/` data directory in the pip wheel, so the collision integral files were not installed to site-packages. Added `"neutrinos_collision_terms"` to the `wanted_paths` set in `package_files()`. After the fix, the data files are correctly installed to `site-packages/classy/neutrinos_collision_terms/` and are found at runtime without needing an explicit `base_path` parameter.
+- Built classy via `make classy` (pip install rebuilds libclass.a with CLASSDIR set to the installation path, then builds the Cython extension). The installed classy module correctly bakes in the installation path as `__CLASSDIR__` so data file discovery works for all users regardless of where they import from.
+- Validated massless SINu case via Python: C_l TT/EE computed, P(k) retrieved, SINu getter properties return correct values (G_eff_nu = 0.03162, log10_G_eff_nu = -1.5, interacting_nu = 1; vanilla case returns 0/0).
+- Validated classy results match CLI results to machine precision: massless TT 4.5e-13, EE 4.8e-13, P(k) 8.2e-13; massive TT 4.2e-13, EE 4.8e-13, P(k) 7.1e-13. PASS on all quantities.
+- Created `tests/validate_classy_vs_cli.py` which runs the full CLI and classy comparison for both SINu massless and massive cases with proper unit conversions (CLI stores l(l+1)C_l/2pi; classy returns raw C_l; CLI P(k) in (Mpc/h)^3 vs classy Mpc^3).
 
 **Deferred items for future ExecPlans:**
 
